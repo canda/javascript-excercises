@@ -1,0 +1,32 @@
+{
+  "name": "javascript-excercises",
+  "version": "1.0.0",
+  "description": "These are exercises I solved to learn javascript and/or programming concepts with an active approach.",
+  "main": "index.js",
+  "scripts": {
+    "test:watch": "jest --watch",
+    "test": "jest",
+    "start": "npm run test:watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/canda/javascript-excercises.git"
+  },
+  "author": "canda",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/canda/javascript-excercises/issues"
+  },
+  "homepage": "https://github.com/canda/javascript-excercises#readme",
+  "dependencies": {
+    "@babel/core": "^7.11.0",
+    "@babel/preset-env": "^7.11.0",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/jest": "^26.0.8",
+    "@typescript-eslint/eslint-plugin": "^3.7.1",
+    "@typescript-eslint/parser": "^3.7.1",
+    "babel-jest": "^26.2.2",
+    "jest": "^26.2.2",
+    "typescript": "^3.9.7"
+  }
+}

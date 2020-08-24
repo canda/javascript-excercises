@@ -1,4 +1,4 @@
-import UndirectedGraphNode from './node';
+import { UndirectedGraphNode } from './node';
 
 describe('Deep First Search', () => {
   test('should return true for 2 connected nodes graph', () => {

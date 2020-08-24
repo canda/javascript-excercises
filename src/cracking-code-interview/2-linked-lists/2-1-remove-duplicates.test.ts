@@ -1,7 +1,7 @@
 import { LinkedList } from '../../data-structures/linked-list.js/linked-list';
 import { removeDuplicates } from './2-1-remove-duplicates';
 
-describe('removeDuplicates', () => {
+describe('removeDuplicates asd', () => {
   it('should not remove anything for unique values', () => {
     const list = new LinkedList(42);
     list.appendToTail(43);
@@ -15,7 +15,7 @@ describe('removeDuplicates', () => {
     expect(list.firstNode.next.next.next).toBe(null);
   });
 
-  it('should not remove anything for unique values', () => {
+  it('should remove duplicate values', () => {
     const list = new LinkedList(42);
     list.appendToTail(42);
     list.appendToTail(43);

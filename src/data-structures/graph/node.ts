@@ -1,4 +1,4 @@
-class UndirectedGraphNode {
+export class UndirectedGraphNode {
   // As this is not a bidirectional graph we can expose the connections and make them mutable
   // in any way the user wants.
   // We don't need to let connected nodes know that we are connected to them
@@ -38,5 +38,3 @@ class UndirectedGraphNode {
     );
   };
 }
-
-export default UndirectedGraphNode;

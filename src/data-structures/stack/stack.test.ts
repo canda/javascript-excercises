@@ -1,7 +1,7 @@
 import { Stack } from './stack';
 
 describe('Stack', () => {
-  it('should be able to pop first element', () => {
+  it('should be able to pop first element of stack', () => {
     expect(new Stack(42).pop()).toBe(42);
   });
   it('should be able to push and pop elements', () => {

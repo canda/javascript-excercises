@@ -1,4 +1,5 @@
 # javascript-excercises
+
 These are exercises I solved to learn javascript and/or programming concepts with an active approach.
 
 `src/data-structures` is the most interesting folder containing implementations of the most common data structures in node.

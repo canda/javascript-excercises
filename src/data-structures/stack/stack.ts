@@ -1,5 +1,5 @@
-class StackNode<T> {
-  value: any;
+export class StackNode<T> {
+  value: T;
   next: StackNode<T> | null;
 
   constructor(value: any, next?: StackNode<T>) {

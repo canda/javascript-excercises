@@ -14,40 +14,50 @@ type Position = { x: number; y: number };
 
 const globalPlayerPaths: Position[][] = [];
 
-const isPositionFree = (playerPaths: Position[][], position: Position) => {
+const isPositionFree = (
+  occupiedPositions: Record<string, true>,
+  position: Position,
+) => {
   if (position.x > 29) return false;
   if (position.y > 19) return false;
   if (position.x < 0) return false;
   if (position.y < 0) return false;
-  if (
-    playerPaths.some((path) =>
-      path.some(({ x, y }) => x === position.x && y === position.y),
-    )
-  )
-    return false;
+  if (occupiedPositions[`${position.x},${position.y}`]) return false;
   return true;
 };
 
-const canGoUp = (playerPaths: Position[][], currentPosition: Position) =>
-  isPositionFree(playerPaths, {
+const canGoUp = (
+  occupiedPositions: Record<string, true>,
+  currentPosition: Position,
+) =>
+  isPositionFree(occupiedPositions, {
     x: currentPosition.x,
     y: currentPosition.y - 1,
   });
 
-const canGoDown = (playerPaths: Position[][], currentPosition: Position) =>
-  isPositionFree(playerPaths, {
+const canGoDown = (
+  occupiedPositions: Record<string, true>,
+  currentPosition: Position,
+) =>
+  isPositionFree(occupiedPositions, {
     x: currentPosition.x,
     y: currentPosition.y + 1,
   });
 
-const canGoLeft = (playerPaths: Position[][], currentPosition: Position) =>
-  isPositionFree(playerPaths, {
+const canGoLeft = (
+  occupiedPositions: Record<string, true>,
+  currentPosition: Position,
+) =>
+  isPositionFree(occupiedPositions, {
     x: currentPosition.x - 1,
     y: currentPosition.y,
   });
 
-const canGoRight = (playerPaths: Position[][], currentPosition: Position) =>
-  isPositionFree(playerPaths, {
+const canGoRight = (
+  occupiedPositions: Record<string, true>,
+  currentPosition: Position,
+) =>
+  isPositionFree(occupiedPositions, {
     x: currentPosition.x + 1,
     y: currentPosition.y,
   });
@@ -85,10 +95,10 @@ const addMovementToPlayerPaths = (
   return newPlayerPaths;
 };
 
-const MAX_CONNECTED_POSITIONS_DEPTH = 50;
+const MAX_CONNECTED_POSITIONS_DEPTH = 200;
 
 const countConnectedPositions = (
-  playerPaths: Position[][],
+  occupiedPositions: Record<string, true>,
   currentPosition: Position,
   countedPositions: Record<string, true> = {},
   depth = 0,
@@ -102,12 +112,12 @@ const countConnectedPositions = (
     const countedPositionIndex = `${positionToCount.x},${positionToCount.y}`;
     if (
       !countedPositions[countedPositionIndex] &&
-      isPositionFree(playerPaths, positionToCount)
+      isPositionFree(occupiedPositions, positionToCount)
     ) {
       countedPositions[countedPositionIndex] = true;
       count += 1;
       count += countConnectedPositions(
-        playerPaths,
+        occupiedPositions,
         positionToCount,
         countedPositions,
         depth + 1,
@@ -127,19 +137,38 @@ const countConnectedPositions = (
   return count;
 };
 
+const nextRightPosition = (position: Position) => ({
+  x: position.x + 1,
+  y: position.y,
+});
+const nextLeftPosition = (position: Position) => ({
+  x: position.x - 1,
+  y: position.y,
+});
+const nextUpPosition = (position: Position) => ({
+  x: position.x,
+  y: position.y - 1,
+});
+const nextDownPosition = (position: Position) => ({
+  x: position.x,
+  y: position.y + 1,
+});
+
 const MAX_DEPTH = 5;
 
 const bestMove = (
-  playerPaths: Position[][],
+  occupiedPositions: Record<string, true>,
   isMaximizing: boolean, // I maximize, my opponent minimizes
   depth: number,
   myIndex: number,
+  myLastPosition: Position,
+  opponentsLastPosition: Position,
 ): { direction: Direction; score: number } => {
   const playerIndex = isMaximizing ? myIndex : myIndex === 0 ? 1 : 0;
   if (depth === MAX_DEPTH) {
     const connectedPositions = countConnectedPositions(
-      playerPaths,
-      lastPositionOfPlayer(playerPaths, playerIndex),
+      occupiedPositions,
+      isMaximizing ? myLastPosition : opponentsLastPosition,
     );
     return {
       direction: Direction.Left,
@@ -148,15 +177,19 @@ const bestMove = (
   }
 
   const leftResult = canGoLeft(
-    playerPaths,
-    lastPositionOfPlayer(playerPaths, playerIndex),
+    occupiedPositions,
+    isMaximizing ? myLastPosition : opponentsLastPosition,
   )
     ? {
         score: bestMove(
-          addMovementToPlayerPaths(playerPaths, Direction.Left, playerIndex),
+          occupiedPositions,
           !isMaximizing,
           depth + 1,
           myIndex,
+          isMaximizing ? nextLeftPosition(myLastPosition) : myLastPosition,
+          isMaximizing
+            ? opponentsLastPosition
+            : nextLeftPosition(opponentsLastPosition),
         ).score,
         direction: Direction.Left,
       }
@@ -166,15 +199,19 @@ const bestMove = (
       };
 
   const rightResult = canGoRight(
-    playerPaths,
-    lastPositionOfPlayer(playerPaths, playerIndex),
+    occupiedPositions,
+    isMaximizing ? myLastPosition : opponentsLastPosition,
   )
     ? {
         score: bestMove(
-          addMovementToPlayerPaths(playerPaths, Direction.Right, playerIndex),
+          occupiedPositions,
           !isMaximizing,
           depth + 1,
           myIndex,
+          isMaximizing ? nextRightPosition(myLastPosition) : myLastPosition,
+          isMaximizing
+            ? opponentsLastPosition
+            : nextRightPosition(opponentsLastPosition),
         ).score,
         direction: Direction.Right,
       }
@@ -184,15 +221,19 @@ const bestMove = (
       };
 
   const upResult = canGoUp(
-    playerPaths,
-    lastPositionOfPlayer(playerPaths, playerIndex),
+    occupiedPositions,
+    isMaximizing ? myLastPosition : opponentsLastPosition,
   )
     ? {
         score: bestMove(
-          addMovementToPlayerPaths(playerPaths, Direction.Up, playerIndex),
+          occupiedPositions,
           !isMaximizing,
           depth + 1,
           myIndex,
+          isMaximizing ? nextUpPosition(myLastPosition) : myLastPosition,
+          isMaximizing
+            ? opponentsLastPosition
+            : nextUpPosition(opponentsLastPosition),
         ).score,
         direction: Direction.Up,
       }
@@ -202,15 +243,19 @@ const bestMove = (
       };
 
   const downResult = canGoDown(
-    playerPaths,
-    lastPositionOfPlayer(playerPaths, playerIndex),
+    occupiedPositions,
+    isMaximizing ? myLastPosition : opponentsLastPosition,
   )
     ? {
         score: bestMove(
-          addMovementToPlayerPaths(playerPaths, Direction.Down, playerIndex),
+          occupiedPositions,
           !isMaximizing,
           depth + 1,
           myIndex,
+          isMaximizing ? nextDownPosition(myLastPosition) : myLastPosition,
+          isMaximizing
+            ? opponentsLastPosition
+            : nextDownPosition(opponentsLastPosition),
         ).score,
         direction: Direction.Down,
       }
@@ -236,6 +281,8 @@ const bestMove = (
   }
 };
 
+const occupiedPositions: Record<string, true> = {};
+
 // game loop
 while (true) {
   var inputs: string[] = readline().split(' ');
@@ -251,8 +298,10 @@ while (true) {
     playerPositions.push({ x0, y0, x, y });
     if (!globalPlayerPaths[i]) {
       globalPlayerPaths[i] = [{ x: x0, y: y0 }];
+      occupiedPositions[`${x0},${y0}`] = true;
     }
     globalPlayerPaths[i].push({ x, y });
+    occupiedPositions[`${x},${y}`] = true;
   }
 
   // Write an action using console.log()
@@ -270,7 +319,14 @@ while (true) {
 
   // console.log('Left');
 
-  const result = bestMove(globalPlayerPaths, true, 0, myIndex);
+  const result = bestMove(
+    occupiedPositions,
+    true,
+    0,
+    myIndex,
+    lastPositionOfPlayer(globalPlayerPaths, myIndex),
+    lastPositionOfPlayer(globalPlayerPaths, myIndex === 0 ? 1 : 0),
+  );
   console.error({ result });
 
   // console.error(JSON.stringify(globalPlayerPaths[0], null, 2));

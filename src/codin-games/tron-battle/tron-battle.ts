@@ -85,24 +85,49 @@ const addMovementToPlayerPaths = (
   return newPlayerPaths;
 };
 
-const possibleDirections = (
-  playerPaths: Position[][],
-  playerIndex: number,
-): number => {
-  let possibilities = 0;
-  if (canGoLeft(playerPaths, lastPositionOfPlayer(playerPaths, playerIndex)))
-    possibilities++;
-  if (canGoRight(playerPaths, lastPositionOfPlayer(playerPaths, playerIndex)))
-    possibilities++;
-  if (canGoUp(playerPaths, lastPositionOfPlayer(playerPaths, playerIndex)))
-    possibilities++;
-  if (canGoDown(playerPaths, lastPositionOfPlayer(playerPaths, playerIndex)))
-    possibilities++;
+const MAX_CONNECTED_POSITIONS_DEPTH = 50;
 
-  return possibilities;
+const countConnectedPositions = (
+  playerPaths: Position[][],
+  currentPosition: Position,
+  countedPositions: Record<string, true> = {},
+  depth = 0,
+): number => {
+  if (depth === MAX_CONNECTED_POSITIONS_DEPTH) {
+    return 0;
+  }
+  let count = 0;
+
+  const doCount = (positionToCount: Position) => {
+    const countedPositionIndex = `${positionToCount.x},${positionToCount.y}`;
+    if (
+      !countedPositions[countedPositionIndex] &&
+      isPositionFree(playerPaths, positionToCount)
+    ) {
+      countedPositions[countedPositionIndex] = true;
+      count += 1;
+      count += countConnectedPositions(
+        playerPaths,
+        positionToCount,
+        countedPositions,
+        depth + 1,
+      );
+    }
+  };
+
+  // UP
+  doCount({ x: currentPosition.x, y: currentPosition.y - 1 });
+  // DOWN
+  doCount({ x: currentPosition.x, y: currentPosition.y + 1 });
+  // LEFT
+  doCount({ x: currentPosition.x - 1, y: currentPosition.y });
+  // RIGHT
+  doCount({ x: currentPosition.x + 1, y: currentPosition.y });
+
+  return count;
 };
 
-const MAX_DEPTH = 10;
+const MAX_DEPTH = 5;
 
 const bestMove = (
   playerPaths: Position[][],
@@ -112,9 +137,13 @@ const bestMove = (
 ): { direction: Direction; score: number } => {
   const playerIndex = isMaximizing ? myIndex : myIndex === 0 ? 1 : 0;
   if (depth === MAX_DEPTH) {
+    const connectedPositions = countConnectedPositions(
+      playerPaths,
+      lastPositionOfPlayer(playerPaths, playerIndex),
+    );
     return {
       direction: Direction.Left,
-      score: depth * possibleDirections(playerPaths, myIndex),
+      score: isMaximizing ? connectedPositions : -connectedPositions,
     };
   }
 

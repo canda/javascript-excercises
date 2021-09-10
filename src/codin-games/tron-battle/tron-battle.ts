@@ -110,7 +110,6 @@ const bestMove = (
   myTurn: boolean = true, // I maximize, my opponent minimizes
   depth: number = 0,
 ): { direction: Direction; score: number } => {
-  console.error({ depth, occupiedPositions });
   if (depth === 0) {
     movesCalculated = 0;
     countConnectedPositionsCalls = 0;
@@ -118,19 +117,30 @@ const bestMove = (
   }
   movesCalculated++;
 
+  // not sure who last moved, but it's easier to set both positions as occupied than figuring out
+  const newOccupiedPositions: Record<string, true> = {
+    ...occupiedPositions,
+    [positionHash(myLastPosition)]: true,
+    [positionHash(opponentsLastPosition)]: true,
+  };
+
   if (depth === MAX_DEPTH || Date.now() - bestMoveStartTime >= MAX_TIME_TAKEN) {
     const myConnectedPositions = countConnectedPositions(
-      occupiedPositions,
+      newOccupiedPositions,
       myLastPosition,
     );
     const opponentConnectedPositions = countConnectedPositions(
-      occupiedPositions,
+      newOccupiedPositions,
       opponentsLastPosition,
     );
     return {
       direction: Direction.Left,
       score: 1 * myConnectedPositions + 600 / opponentConnectedPositions,
-    };
+      // only for debugging purposes
+      _myConnectedPositions: myConnectedPositions,
+      _opponentConnectedPositions: opponentConnectedPositions,
+      _depth: depth,
+    } as { direction: Direction; score: number };
   }
 
   const results: { score: number; direction: Direction }[] = [];
@@ -138,12 +148,12 @@ const bestMove = (
   for (const direction of Object.values(Direction)) {
     const result = canGo(
       direction,
-      occupiedPositions,
+      newOccupiedPositions,
       myTurn ? myLastPosition : opponentsLastPosition,
     )
       ? {
-          score: bestMove(
-            occupiedPositions,
+          ...bestMove(
+            newOccupiedPositions,
             myTurn
               ? nextPositionInDirection(myLastPosition, direction)
               : myLastPosition,
@@ -152,7 +162,7 @@ const bestMove = (
               : nextPositionInDirection(opponentsLastPosition, direction),
             !myTurn,
             depth + 1,
-          ).score,
+          ),
           direction: direction,
         }
       : {

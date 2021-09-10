@@ -22,9 +22,11 @@ const isPositionFree = (
   if (position.y > 19) return false;
   if (position.x < 0) return false;
   if (position.y < 0) return false;
-  if (occupiedPositions[`${position.x},${position.y}`]) return false;
+  if (occupiedPositions[positionHash(position)]) return false;
   return true;
 };
+
+const positionHash = (position: Position) => `${position.x},${position.y}`;
 
 const nextPositionInDirection = (position: Position, direction: Direction) => {
   const nextPosition = { ...position };
@@ -60,6 +62,7 @@ const canGo = (
 const lastPositionOfPlayer = (playerPaths: Position[][], playerIndex: number) =>
   playerPaths[playerIndex][playerPaths[playerIndex].length - 1];
 
+let countConnectedPositionsCalls = 0;
 const countConnectedPositions = (
   occupiedPositions: Record<string, true>,
   currentPosition: Position,
@@ -67,13 +70,15 @@ const countConnectedPositions = (
   depth = 0,
 ): number => {
   let count = 0;
+  if (depth === 0) {
+    countConnectedPositionsCalls++;
+  }
 
   const doCount = (positionToCount: Position) => {
-    const countedPositionIndex = `${positionToCount.x},${positionToCount.y}`;
-    if (countedPositions[countedPositionIndex]) {
+    if (countedPositions[positionHash(positionToCount)]) {
       return;
     }
-    countedPositions[countedPositionIndex] = true;
+    countedPositions[positionHash(positionToCount)] = true;
     if (!isPositionFree(occupiedPositions, positionToCount)) {
       return;
     }
@@ -93,24 +98,38 @@ const countConnectedPositions = (
   return count;
 };
 
-const MAX_DEPTH = 4;
+const MAX_TIME_TAKEN = 30;
+const MAX_DEPTH = 10;
 
+let movesCalculated = 0;
+let bestMoveStartTime = 0;
 const bestMove = (
   occupiedPositions: Record<string, true>,
-  isMaximizing: boolean, // I maximize, my opponent minimizes
-  depth: number,
-  myIndex: number,
   myLastPosition: Position,
   opponentsLastPosition: Position,
+  myTurn: boolean = true, // I maximize, my opponent minimizes
+  depth: number = 0,
 ): { direction: Direction; score: number } => {
-  if (depth === MAX_DEPTH) {
-    const connectedPositions = countConnectedPositions(
+  console.error({ depth, occupiedPositions });
+  if (depth === 0) {
+    movesCalculated = 0;
+    countConnectedPositionsCalls = 0;
+    bestMoveStartTime = Date.now();
+  }
+  movesCalculated++;
+
+  if (depth === MAX_DEPTH || Date.now() - bestMoveStartTime >= MAX_TIME_TAKEN) {
+    const myConnectedPositions = countConnectedPositions(
       occupiedPositions,
-      isMaximizing ? myLastPosition : opponentsLastPosition,
+      myLastPosition,
+    );
+    const opponentConnectedPositions = countConnectedPositions(
+      occupiedPositions,
+      opponentsLastPosition,
     );
     return {
       direction: Direction.Left,
-      score: isMaximizing ? connectedPositions : -connectedPositions,
+      score: 1 * myConnectedPositions + 600 / opponentConnectedPositions,
     };
   }
 
@@ -120,26 +139,25 @@ const bestMove = (
     const result = canGo(
       direction,
       occupiedPositions,
-      isMaximizing ? myLastPosition : opponentsLastPosition,
+      myTurn ? myLastPosition : opponentsLastPosition,
     )
       ? {
           score: bestMove(
             occupiedPositions,
-            !isMaximizing,
-            depth + 1,
-            myIndex,
-            isMaximizing
+            myTurn
               ? nextPositionInDirection(myLastPosition, direction)
               : myLastPosition,
-            isMaximizing
+            myTurn
               ? opponentsLastPosition
               : nextPositionInDirection(opponentsLastPosition, direction),
+            !myTurn,
+            depth + 1,
           ).score,
           direction: direction,
         }
       : {
           direction: direction,
-          score: isMaximizing ? -Infinity : Infinity,
+          score: myTurn ? -Infinity : Infinity,
         };
     results.push(result);
   }
@@ -148,13 +166,19 @@ const bestMove = (
   results.sort((x, y) => x.score - y.score);
 
   if (depth === 0) {
+    console.error(
+      `took ${
+        Date.now() - bestMoveStartTime
+      } milliseconds to calculate bestMove`,
+    );
+    console.error({ movesCalculated, countConnectedPositionsCalls });
     console.error({ results });
   }
-  if (isMaximizing) {
-    // if maximizing return highest score
+  if (myTurn) {
+    // if my turn, I maximize and return highest score
     return results[results.length - 1];
   } else {
-    // if minimizing return lowest score
+    // if opponents turn, he minimizes and return lowest score
     return results[0];
   }
 };
@@ -176,10 +200,10 @@ while (true) {
     playerPositions.push({ x0, y0, x, y });
     if (!globalPlayerPaths[i]) {
       globalPlayerPaths[i] = [{ x: x0, y: y0 }];
-      occupiedPositions[`${x0},${y0}`] = true;
+      occupiedPositions[positionHash({ x: x0, y: y0 })] = true;
     }
     globalPlayerPaths[i].push({ x, y });
-    occupiedPositions[`${x},${y}`] = true;
+    occupiedPositions[positionHash({ x, y })] = true;
   }
 
   // Write an action using console.log()
@@ -187,9 +211,6 @@ while (true) {
 
   const result = bestMove(
     occupiedPositions,
-    true,
-    0,
-    myIndex,
     lastPositionOfPlayer(globalPlayerPaths, myIndex),
     lastPositionOfPlayer(globalPlayerPaths, myIndex === 0 ? 1 : 0),
   );

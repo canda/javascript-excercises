@@ -11,7 +11,7 @@ export class UndirectedGraphNode {
   isConnectedDFS = (
     otherNode: UndirectedGraphNode,
     queriedNodes?: UndirectedGraphNode[],
-  ) => {
+  ): boolean => {
     if (queriedNodes && queriedNodes.includes(this)) {
       return false;
     }
@@ -26,7 +26,7 @@ export class UndirectedGraphNode {
   isConnectedBFS = (
     otherNode: UndirectedGraphNode,
     queriedNodes?: UndirectedGraphNode[],
-  ) => {
+  ): boolean => {
     if (queriedNodes && queriedNodes.includes(this)) {
       return false;
     }

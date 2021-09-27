@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "outDir": "build"
+  }
+}

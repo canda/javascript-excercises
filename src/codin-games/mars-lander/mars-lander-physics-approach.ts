@@ -69,7 +69,7 @@ while (true) {
 
   let targetAngle;
   let targetPower;
-  if (timeToY < 2) {
+  if (timeToY < 4) {
     targetAngle = 0;
     targetPower = 4;
   } else {
@@ -96,9 +96,9 @@ while (true) {
       //   : MAX_LANDING_VELOCITY.x),
       y:
         distanceX > 1000
-          ? 0
+          ? -MAX_LANDING_VELOCITY.y / 4
           : distanceX > 500
-          ? -MAX_LANDING_VELOCITY.y * 2
+          ? -MAX_LANDING_VELOCITY.y / 2
           : -MAX_LANDING_VELOCITY.y,
       // : -Math.min(
       //     (Y - target.y) / (timeToArrive || 0.1),
@@ -144,5 +144,3 @@ while (true) {
   // `R P`. `R` is the desired rotation angle. `P` is the desired thrust power.
   console.log(`${Math.round(targetAngle)} ${Math.round(targetPower)}`);
 }
-
-export {};

@@ -15,8 +15,6 @@ const marsLanderSimulator = () => {
   ];
 
   const svgElement = document.querySelector('#simulator-svg');
-  const WIDTH_RATIO = svgElement.clientWidth / 7000;
-  const HEIGHT_RATIO = svgElement.clientHeight / 3000;
 
   const floorPolyline = document.createElementNS(
     'http://www.w3.org/2000/svg',

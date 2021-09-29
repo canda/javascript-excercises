@@ -48,13 +48,18 @@ const marsLanderSimulator = () => {
   };
 
   const rocketElement = document.querySelector('#rocket');
-  const render = () => {
+  const rocketFireElement = document.querySelector('#rocket-fire');
+  const render = (position: Coordinate, rotation: number, thrust: number) => {
     rocketElement.setAttribute(
       'transform',
-      `translate(${currentState.position.x},${currentState.position.y}) rotate(${currentState.rotation})`,
+      `translate(${position.x},${position.y}) rotate(${rotation})`,
+    );
+    rocketFireElement.setAttribute(
+      'transform',
+      // translation is a hack
+      `translate(0,${200 * (thrust - 1)}) scale(1,${thrust})`,
     );
   };
-  render();
 
   const degreesToRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
@@ -91,7 +96,7 @@ const marsLanderSimulator = () => {
     console.log({ verticalAcceleration, horizontalAcceleration });
 
     // render on svg the new position rotation and thrust
-    render();
+    render(currentState.position, currentState.rotation, currentState.thrust);
   };
 
   setInterval(() => {

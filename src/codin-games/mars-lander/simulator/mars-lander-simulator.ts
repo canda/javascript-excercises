@@ -76,6 +76,7 @@ const marsLanderSimulator = () => {
       Math.sin(degreesToRadians(-currentState.rotation)) * currentState.thrust;
 
     // set new position
+    const previousPosition = { ...currentState.position };
     currentState.position.x =
       currentState.position.x +
       currentState.velocity.horizontal +
@@ -95,12 +96,20 @@ const marsLanderSimulator = () => {
     currentState.rotation = newInput.rotation;
     currentState.thrust = newInput.thrust;
 
-    console.log(currentState.position);
-    console.log(currentState.velocity);
-    console.log({ verticalAcceleration, horizontalAcceleration });
-
     // render on svg the new position rotation and thrust
     render(currentState.position, currentState.rotation, currentState.thrust);
+
+    const collided = didCollideWithFloor(
+      FLOOR_POINTS,
+      previousPosition,
+      currentState.position,
+    );
+
+    return {
+      collided,
+      landedSuccesfully: false,
+      position: currentState.position,
+    };
   };
 
   const randomInt = (min: number, max: number) =>
@@ -120,10 +129,45 @@ const marsLanderSimulator = () => {
 
   console.log(JSON.stringify(randomRun));
 
+  // segment intersection
+  // to see if we have collided, we have to check whether the segment between our last position and our new position intersects with any segment of the floor
+
+  const didCollideWithFloor = (
+    floor: Coordinate[],
+    previousPosition: Coordinate,
+    newPosition: Coordinate,
+  ): boolean => {
+    type Segment = [Coordinate, Coordinate];
+    const ccw = (A: Coordinate, B: Coordinate, C: Coordinate) =>
+      (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x);
+    const doesSegmentsIntersect = (segment1: Segment, segment2: Segment) =>
+      ccw(segment1[0], segment2[0], segment2[1]) !==
+        ccw(segment1[1], segment2[0], segment2[1]) &&
+      ccw(segment1[0], segment1[1], segment2[0]) !=
+        ccw(segment1[0], segment1[1], segment2[1]);
+
+    const positionSegment: Segment = [previousPosition, newPosition];
+    let collidedWithFloor = false;
+    for (let i = 0; i < floor.length - 1; i++) {
+      const floorSegment: Segment = [floor[i], floor[i + 1]];
+      if (doesSegmentsIntersect(positionSegment, floorSegment)) {
+        collidedWithFloor = true;
+        break;
+      }
+    }
+
+    return collidedWithFloor;
+  };
+
   let turn = 0;
-  setInterval(() => {
-    gameTurn(randomRun[turn]);
-    turn++;
+  const intervalId = setInterval(() => {
+    const result = gameTurn(randomRun[turn]);
+    console.log(result);
+    if (result.collided) {
+      clearInterval(intervalId);
+    } else {
+      turn++;
+    }
   }, 300);
 };
 marsLanderSimulator();

@@ -7,6 +7,10 @@ const marsLanderSimulator = () => {
     horizontal: number;
     vertical: number;
   };
+  type GameInput = {
+    thrust: number;
+    rotation: number;
+  };
 
   const FLOOR_POINTS: Coordinate[] = [
     { x: 0, y: 100 },
@@ -63,7 +67,7 @@ const marsLanderSimulator = () => {
 
   const degreesToRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
-  const gameTurn = (newThrust: number, newRotation: number) => {
+  const gameTurn = (newInput: { thrust: number; rotation: number }) => {
     // calculate accelerations
     const verticalAcceleration =
       Math.cos(degreesToRadians(currentState.rotation)) * currentState.thrust -
@@ -88,8 +92,8 @@ const marsLanderSimulator = () => {
       currentState.velocity.vertical + verticalAcceleration;
 
     // set input rotation and thrust
-    currentState.rotation = newRotation;
-    currentState.thrust = newThrust;
+    currentState.rotation = newInput.rotation;
+    currentState.thrust = newInput.thrust;
 
     console.log(currentState.position);
     console.log(currentState.velocity);
@@ -99,8 +103,27 @@ const marsLanderSimulator = () => {
     render(currentState.position, currentState.rotation, currentState.thrust);
   };
 
+  const randomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const randomInput = (previousRotation: number): GameInput => ({
+    rotation: previousRotation + randomInt(-15, 15),
+    thrust: randomInt(0, 4),
+  });
+
+  const randomRun: GameInput[] = [];
+  for (let i = 0; i < 100; i++) {
+    randomRun.push(
+      randomInput(i === 0 ? INITIAL_ROTATION : randomRun[i - 1].rotation),
+    );
+  }
+
+  console.log(JSON.stringify(randomRun));
+
+  let turn = 0;
   setInterval(() => {
-    gameTurn(4, 90);
-  }, 1000);
+    gameTurn(randomRun[turn]);
+    turn++;
+  }, 300);
 };
 marsLanderSimulator();

@@ -1,0 +1,16 @@
+{
+  "name": "simulator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "mars-lander-simulator.js",
+  "scripts": {
+    "start": "concurrently --kill-others \"live-server\" \"tsc -w\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^6.2.2",
+    "live-server": "^1.2.1",
+    "typescript": "^4.4.3"
+  }
+}

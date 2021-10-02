@@ -23,13 +23,23 @@ const marsLanderSimulator = () => {
   type Chromosome = Gene[];
   type Population = Chromosome[];
 
+  type ChromosomeScore = {
+    ponderedAverage: number;
+    distancePoints: number;
+    velocityPoints: number;
+    fuelPoints: number;
+    rotationPoints: number;
+  };
   type ChromosomeResult = {
     positions: Coordinate[];
     finalPosition: Coordinate;
     finalVelocity: Velocity;
     usedFuel: number;
-    score: number;
+    score: {
+      ponderedAverage: number;
+    };
     chromosome: Chromosome;
+    states: GameState[];
   };
 
   type PopulationResult = {
@@ -38,10 +48,12 @@ const marsLanderSimulator = () => {
   };
 
   const GENETIC_CONFIG = {
-    POPULATION_SIZE: 100,
+    POPULATION_SIZE: 1000,
     CHROMOSOME_SIZE: 100,
     SURVIVAL_PERCENTAGE: 0.1,
     PROBABILITY_OF_MUTATION: 0.01,
+    MAX_ITERATIONS: 100,
+    ANIMATE: true,
   };
 
   const FLOOR_POINTS: Coordinate[] = [
@@ -133,13 +145,6 @@ const marsLanderSimulator = () => {
     newState.rotation = newInput.rotationChange + currentState.rotation;
     newState.thrust = newInput.thrust;
 
-    // render on svg the new position rotation and thrust
-    renderTurn(
-      currentState.position,
-      currentState.rotation,
-      currentState.thrust,
-    );
-
     const collided = didCollideWithFloor(
       FLOOR_POINTS,
       currentState.position,
@@ -222,32 +227,45 @@ const marsLanderSimulator = () => {
   const distance = (p1: Coordinate, p2: Coordinate) =>
     Math.hypot(p1.x - p2.x, p1.y - p2.y);
 
-  const chromosomeResultScore = (gameRun: {
-    finalVelocity: Velocity;
-    finalPosition: Coordinate;
-    usedFuel: number;
-  }) => {
+  const chromosomeResultScore = (states: GameState[], usedFuel: number) => {
+    const lastState = states[states.length - 1];
+    const lastState2 = states[states.length - 2];
+    const lastState3 = states[states.length - 3];
+
     // Each point should be a number between 0 and 1
     // Then we will multiply them by an arbitrary preponderance number
     // 1 is bad, 0 is good
-    const distancePoints = distance(gameRun.finalPosition, floorTarget) / 7000;
+    const distancePoints = distance(lastState.position, floorTarget) / 7000;
 
     const velocityPoints =
-      Math.abs(gameRun.finalVelocity.vertical) > 40 ||
-      Math.abs(gameRun.finalVelocity.vertical) > 20
+      Math.abs(lastState.velocity.vertical) > 40 ||
+      Math.abs(lastState.velocity.vertical) > 20
         ? 1
         : 0;
 
-    const fuelPoints = gameRun.usedFuel / 2000;
+    const fuelPoints = usedFuel / 2000;
+
+    const rotationPoints =
+      (Math.abs(lastState.rotation) +
+        Math.abs(lastState2.rotation) +
+        Math.abs(lastState3.rotation)) /
+      (90 * 3);
 
     const DISTANCE_PREPONDERANCE = 1;
     const VELOCITY_PREPONDERANCE = 1;
     const FUEL_PREPONDERANCE = 1;
-    return (
-      -DISTANCE_PREPONDERANCE * distancePoints -
-      VELOCITY_PREPONDERANCE * velocityPoints -
-      FUEL_PREPONDERANCE * fuelPoints
-    );
+    const ROTATION_PREPONDERANCE = 2;
+    return {
+      ponderedAverage:
+        -DISTANCE_PREPONDERANCE * distancePoints -
+        VELOCITY_PREPONDERANCE * velocityPoints -
+        FUEL_PREPONDERANCE * fuelPoints -
+        ROTATION_PREPONDERANCE * rotationPoints,
+      distancePoints,
+      velocityPoints,
+      fuelPoints,
+      rotationPoints,
+    };
   };
 
   const runChromosome = (gameInputs: Chromosome) => {
@@ -260,26 +278,26 @@ const marsLanderSimulator = () => {
       rotation: INITIAL_ROTATION,
       thrust: INITIAL_THRUST,
     };
+    const states: GameState[] = [currentState];
     const gameRunPositions: Coordinate[] = [];
     while (!result || !result.collided) {
       result = gameTurn(gameInputs[turn], currentState);
       usedFuel += result.newState.thrust;
       currentState = result.newState;
+      states.push(currentState);
       gameRunPositions.push({ ...currentState.position });
       if (result.collided) {
         const finalPosition = result.newState.position;
         const finalVelocity = result.newState.velocity;
+        const finalRotation = result.newState.rotation;
         const gameRun: ChromosomeResult = {
           positions: gameRunPositions,
           finalPosition,
           finalVelocity,
           usedFuel,
-          score: chromosomeResultScore({
-            finalPosition,
-            finalVelocity,
-            usedFuel,
-          }),
+          score: chromosomeResultScore(states, usedFuel),
           chromosome: gameInputs,
+          states,
         };
         return gameRun;
       } else {
@@ -302,7 +320,7 @@ const marsLanderSimulator = () => {
 
   const renderPopulationResult = (populationResult: PopulationResult) => {
     const sortedRuns = populationResult.results.sort(
-      (x, y) => y.score - x.score,
+      (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
     );
     const chromosomeResultsToKeep = Math.round(
       GENETIC_CONFIG.POPULATION_SIZE * GENETIC_CONFIG.SURVIVAL_PERCENTAGE,
@@ -390,11 +408,45 @@ const marsLanderSimulator = () => {
   let populationResult = runPopulation(population);
   renderPopulationResult(populationResult);
 
-  // setInterval(() => {
-  //   population = optimizePopulation(populationResult);
-  //   populationResult = runPopulation(population);
+  const delay = (milis: number) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, milis);
+    });
 
-  //   renderPopulationResult(populationResult);
-  // }, 500);
+  let bestChromosome: Chromosome;
+  const loopAndOptimize = async () => {
+    for (let i = 0; i < GENETIC_CONFIG.MAX_ITERATIONS; i++) {
+      if (GENETIC_CONFIG.ANIMATE) {
+        await delay(400);
+      }
+      population = optimizePopulation(populationResult);
+      populationResult = runPopulation(population);
+
+      renderPopulationResult(populationResult);
+
+      console.log(
+        'unsorted',
+        populationResult.results.map((x) => x.score.ponderedAverage),
+      );
+      console.log(
+        'sorted',
+        populationResult.results
+          .sort((x, y) => y.score.ponderedAverage - x.score.ponderedAverage)
+          .map((x) => x.score.ponderedAverage),
+      );
+    }
+    console.log(
+      populationResult.results.sort(
+        (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
+      )[0],
+    );
+
+    bestChromosome = populationResult.results.sort(
+      (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
+    )[0].chromosome;
+
+    console.log(JSON.stringify(bestChromosome, null, 2));
+  };
+  loopAndOptimize();
 };
 marsLanderSimulator();

@@ -30,10 +30,9 @@ const marsLanderSimulator = () => {
     fuelPoints: number;
     rotationPoints: number;
   };
+
   type ChromosomeResult = {
     positions: Coordinate[];
-    finalPosition: Coordinate;
-    finalVelocity: Velocity;
     usedFuel: number;
     score: {
       ponderedAverage: number;
@@ -48,12 +47,13 @@ const marsLanderSimulator = () => {
   };
 
   const GENETIC_CONFIG = {
-    POPULATION_SIZE: 1000,
+    POPULATION_SIZE: 200,
     CHROMOSOME_SIZE: 100,
     SURVIVAL_PERCENTAGE: 0.1,
     PROBABILITY_OF_MUTATION: 0.01,
-    MAX_ITERATIONS: 100,
+    MAX_ITERATIONS: 1000,
     ANIMATE: true,
+    ANIMATION_VELOCITY: 10,
   };
 
   const FLOOR_POINTS: Coordinate[] = [
@@ -227,7 +227,10 @@ const marsLanderSimulator = () => {
   const distance = (p1: Coordinate, p2: Coordinate) =>
     Math.hypot(p1.x - p2.x, p1.y - p2.y);
 
-  const chromosomeResultScore = (states: GameState[], usedFuel: number) => {
+  const chromosomeResultScore = (
+    states: GameState[],
+    usedFuel: number,
+  ): ChromosomeScore => {
     const lastState = states[states.length - 1];
     const lastState2 = states[states.length - 2];
     const lastState3 = states[states.length - 3];
@@ -238,10 +241,9 @@ const marsLanderSimulator = () => {
     const distancePoints = distance(lastState.position, floorTarget) / 7000;
 
     const velocityPoints =
-      Math.abs(lastState.velocity.vertical) > 40 ||
-      Math.abs(lastState.velocity.vertical) > 20
-        ? 1
-        : 0;
+      1 -
+      1 / Math.abs(lastState.velocity.vertical) -
+      1 / Math.abs(lastState.velocity.vertical);
 
     const fuelPoints = usedFuel / 2000;
 
@@ -254,7 +256,7 @@ const marsLanderSimulator = () => {
     const DISTANCE_PREPONDERANCE = 1;
     const VELOCITY_PREPONDERANCE = 1;
     const FUEL_PREPONDERANCE = 1;
-    const ROTATION_PREPONDERANCE = 2;
+    const ROTATION_PREPONDERANCE = 1;
     return {
       ponderedAverage:
         -DISTANCE_PREPONDERANCE * distancePoints -
@@ -287,13 +289,8 @@ const marsLanderSimulator = () => {
       states.push(currentState);
       gameRunPositions.push({ ...currentState.position });
       if (result.collided) {
-        const finalPosition = result.newState.position;
-        const finalVelocity = result.newState.velocity;
-        const finalRotation = result.newState.rotation;
         const gameRun: ChromosomeResult = {
           positions: gameRunPositions,
-          finalPosition,
-          finalVelocity,
           usedFuel,
           score: chromosomeResultScore(states, usedFuel),
           chromosome: gameInputs,
@@ -354,7 +351,15 @@ const marsLanderSimulator = () => {
   const mergeGeneAttribute = (
     parentAttribute1: number,
     parentAttribute2: number,
+    min: number,
+    max: number,
   ): number => {
+    const shouldMutate = Math.random() < GENETIC_CONFIG.PROBABILITY_OF_MUTATION;
+
+    if (shouldMutate) {
+      return randomInt(min, max);
+    }
+
     const randomRatio = Math.random();
     return Math.round(
       parentAttribute1 * randomRatio + parentAttribute2 * (1 - randomRatio),
@@ -389,10 +394,14 @@ const marsLanderSimulator = () => {
           rotationChange: mergeGeneAttribute(
             parent1.chromosome[j].rotationChange,
             parent2.chromosome[j].rotationChange,
+            -15,
+            15,
           ),
           thrust: mergeGeneAttribute(
             parent1.chromosome[j].thrust,
             parent2.chromosome[j].thrust,
+            0,
+            4,
           ),
         };
         newChromosome.push(newInput);
@@ -413,39 +422,24 @@ const marsLanderSimulator = () => {
       setTimeout(resolve, milis);
     });
 
-  let bestChromosome: Chromosome;
   const loopAndOptimize = async () => {
+    let best: ChromosomeResult;
     for (let i = 0; i < GENETIC_CONFIG.MAX_ITERATIONS; i++) {
       if (GENETIC_CONFIG.ANIMATE) {
-        await delay(400);
+        await delay(400 / GENETIC_CONFIG.ANIMATION_VELOCITY);
       }
       population = optimizePopulation(populationResult);
       populationResult = runPopulation(population);
 
       renderPopulationResult(populationResult);
 
-      console.log(
-        'unsorted',
-        populationResult.results.map((x) => x.score.ponderedAverage),
-      );
-      console.log(
-        'sorted',
-        populationResult.results
-          .sort((x, y) => y.score.ponderedAverage - x.score.ponderedAverage)
-          .map((x) => x.score.ponderedAverage),
-      );
-    }
-    console.log(
-      populationResult.results.sort(
+      best = populationResult.results.sort(
         (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
-      )[0],
-    );
+      )[0];
+    }
 
-    bestChromosome = populationResult.results.sort(
-      (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
-    )[0].chromosome;
-
-    console.log(JSON.stringify(bestChromosome, null, 2));
+    console.log(best);
+    console.log(JSON.stringify(best.chromosome, null, 2));
   };
   loopAndOptimize();
 };

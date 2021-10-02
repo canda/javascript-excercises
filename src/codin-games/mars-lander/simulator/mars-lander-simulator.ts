@@ -9,7 +9,7 @@ const marsLanderSimulator = () => {
   };
   type GameInput = {
     thrust: number;
-    rotation: number;
+    rotationChange: number;
   };
 
   type GameState = {
@@ -19,10 +19,29 @@ const marsLanderSimulator = () => {
     thrust: number;
   };
 
-  type GameRun = {
+  type Gene = GameInput;
+  type Chromosome = Gene[];
+  type Population = Chromosome[];
+
+  type ChromosomeResult = {
     positions: Coordinate[];
     finalPosition: Coordinate;
     finalVelocity: Velocity;
+    usedFuel: number;
+    score: number;
+    chromosome: Chromosome;
+  };
+
+  type PopulationResult = {
+    results: ChromosomeResult[];
+    population: Population;
+  };
+
+  const GENETIC_CONFIG = {
+    POPULATION_SIZE: 100,
+    CHROMOSOME_SIZE: 100,
+    SURVIVAL_PERCENTAGE: 0.1,
+    PROBABILITY_OF_MUTATION: 0.01,
   };
 
   const FLOOR_POINTS: Coordinate[] = [
@@ -82,10 +101,7 @@ const marsLanderSimulator = () => {
 
   const degreesToRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
-  const gameTurn = (
-    newInput: { thrust: number; rotation: number },
-    currentState: GameState,
-  ) => {
+  const gameTurn = (newInput: GameInput, currentState: GameState) => {
     const newState = { ...currentState };
 
     // calculate accelerations
@@ -114,7 +130,7 @@ const marsLanderSimulator = () => {
     };
 
     // set input rotation and thrust
-    newState.rotation = newInput.rotation;
+    newState.rotation = newInput.rotationChange + currentState.rotation;
     newState.thrust = newInput.thrust;
 
     // render on svg the new position rotation and thrust
@@ -140,17 +156,13 @@ const marsLanderSimulator = () => {
   const randomInt = (min: number, max: number) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
 
-  const randomInput = (previousRotation: number): GameInput => ({
-    rotation: previousRotation + randomInt(-15, 15),
-    thrust: randomInt(0, 4),
-  });
-
-  const generateRandomRun = () => {
-    const randomRun: GameInput[] = [];
-    for (let i = 0; i < 100; i++) {
-      randomRun.push(
-        randomInput(i === 0 ? INITIAL_ROTATION : randomRun[i - 1].rotation),
-      );
+  const generateRandomChromosome = () => {
+    const randomRun: Chromosome = [];
+    for (let i = 0; i < GENETIC_CONFIG.CHROMOSOME_SIZE; i++) {
+      randomRun.push({
+        rotationChange: randomInt(-15, 15),
+        thrust: randomInt(0, 4),
+      });
     }
     return randomRun;
   };
@@ -185,42 +197,204 @@ const marsLanderSimulator = () => {
     return collidedWithFloor;
   };
 
-  const renderRun = (gameRun: GameRun) => {
-    const runPolyline = createPolyline(gameRun.positions);
-    svgElement.appendChild(runPolyline);
+  const chromosomeResultsContainer = document.querySelector(
+    '#chromosome-results',
+  );
+  const renderResult = (result: ChromosomeResult) => {
+    const runPolyline = createPolyline(result.positions);
+    chromosomeResultsContainer.appendChild(runPolyline);
+    return runPolyline;
   };
 
-  for (let i = 0; i < 50; i++) {
-    console.log({ i });
-    const gameRunPositions: Coordinate[] = [];
-    let result;
-    const randomRun = generateRandomRun();
+  const findFloorTarget = (floor: Coordinate[]) => {
+    const firstTargetIndex = floor.findIndex(
+      (point, index) => point.y === floor[index + 1].y,
+    );
 
+    const point1 = floor[firstTargetIndex];
+    const point2 = floor[firstTargetIndex + 1];
+
+    return { x: (point1.x + point2.x) / 2, y: point1.y };
+  };
+
+  const floorTarget = findFloorTarget(FLOOR_POINTS);
+
+  const distance = (p1: Coordinate, p2: Coordinate) =>
+    Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+  const chromosomeResultScore = (gameRun: {
+    finalVelocity: Velocity;
+    finalPosition: Coordinate;
+    usedFuel: number;
+  }) => {
+    // Each point should be a number between 0 and 1
+    // Then we will multiply them by an arbitrary preponderance number
+    // 1 is bad, 0 is good
+    const distancePoints = distance(gameRun.finalPosition, floorTarget) / 7000;
+
+    const velocityPoints =
+      Math.abs(gameRun.finalVelocity.vertical) > 40 ||
+      Math.abs(gameRun.finalVelocity.vertical) > 20
+        ? 1
+        : 0;
+
+    const fuelPoints = gameRun.usedFuel / 2000;
+
+    const DISTANCE_PREPONDERANCE = 1;
+    const VELOCITY_PREPONDERANCE = 1;
+    const FUEL_PREPONDERANCE = 1;
+    return (
+      -DISTANCE_PREPONDERANCE * distancePoints -
+      VELOCITY_PREPONDERANCE * velocityPoints -
+      FUEL_PREPONDERANCE * fuelPoints
+    );
+  };
+
+  const runChromosome = (gameInputs: Chromosome) => {
+    let usedFuel = 0;
+    let result;
+    let turn = 0;
     let currentState = {
       position: INITIAL_POSITION,
       velocity: INITIAL_VELOCITY,
       rotation: INITIAL_ROTATION,
       thrust: INITIAL_THRUST,
     };
-
-    let turn = 0;
+    const gameRunPositions: Coordinate[] = [];
     while (!result || !result.collided) {
-      console.log({ randomRun, turn });
-      result = gameTurn(randomRun[turn], currentState);
+      result = gameTurn(gameInputs[turn], currentState);
+      usedFuel += result.newState.thrust;
       currentState = result.newState;
       gameRunPositions.push({ ...currentState.position });
       if (result.collided) {
-        const gameRun: GameRun = {
+        const finalPosition = result.newState.position;
+        const finalVelocity = result.newState.velocity;
+        const gameRun: ChromosomeResult = {
           positions: gameRunPositions,
-          finalPosition: result.newState.position,
-          finalVelocity: result.newState.velocity,
+          finalPosition,
+          finalVelocity,
+          usedFuel,
+          score: chromosomeResultScore({
+            finalPosition,
+            finalVelocity,
+            usedFuel,
+          }),
+          chromosome: gameInputs,
         };
-        renderRun(gameRun);
+        return gameRun;
       } else {
         turn++;
       }
     }
-    console.log({ i });
-  }
+  };
+
+  const runPopulation = (population: Population): PopulationResult => {
+    const results: ChromosomeResult[] = [];
+    population.forEach((chromosome) => {
+      results.push(runChromosome(chromosome));
+    });
+
+    return {
+      population,
+      results,
+    };
+  };
+
+  const renderPopulationResult = (populationResult: PopulationResult) => {
+    const sortedRuns = populationResult.results.sort(
+      (x, y) => y.score - x.score,
+    );
+    const chromosomeResultsToKeep = Math.round(
+      GENETIC_CONFIG.POPULATION_SIZE * GENETIC_CONFIG.SURVIVAL_PERCENTAGE,
+    );
+    const failedRuns = sortedRuns.slice(
+      chromosomeResultsToKeep,
+      sortedRuns.length,
+    );
+    const succesfullRuns = sortedRuns.slice(0, chromosomeResultsToKeep);
+
+    chromosomeResultsContainer.innerHTML = '';
+    failedRuns.forEach((run) => {
+      renderResult(run);
+    });
+    succesfullRuns.forEach((run) => {
+      renderResult(run).setAttribute('stroke', 'green');
+    });
+  };
+
+  const generateRandomPopulation = (): Population => {
+    const population: Population = [];
+
+    for (let i = 0; i < GENETIC_CONFIG.POPULATION_SIZE; i++) {
+      const randomChromosome = generateRandomChromosome();
+      population.push(randomChromosome);
+    }
+
+    return population;
+  };
+
+  const mergeGeneAttribute = (
+    parentAttribute1: number,
+    parentAttribute2: number,
+  ): number => {
+    const randomRatio = Math.random();
+    return Math.round(
+      parentAttribute1 * randomRatio + parentAttribute2 * (1 - randomRatio),
+    );
+  };
+
+  const optimizePopulation = (
+    originalPopulationResult: PopulationResult,
+  ): Population => {
+    const survivingChromosomeResults = originalPopulationResult.results.slice(
+      0,
+      Math.floor(
+        GENETIC_CONFIG.POPULATION_SIZE * GENETIC_CONFIG.SURVIVAL_PERCENTAGE,
+      ),
+    );
+
+    const population: Population = [];
+
+    for (let i = 0; i < GENETIC_CONFIG.POPULATION_SIZE; i++) {
+      const newChromosome: Chromosome = [];
+      const parent1 =
+        survivingChromosomeResults[
+          randomInt(0, survivingChromosomeResults.length - 1)
+        ];
+      const parent2 =
+        survivingChromosomeResults[
+          randomInt(0, survivingChromosomeResults.length - 1)
+        ];
+
+      for (let j = 0; j < GENETIC_CONFIG.CHROMOSOME_SIZE; j++) {
+        const newInput: Gene = {
+          rotationChange: mergeGeneAttribute(
+            parent1.chromosome[j].rotationChange,
+            parent2.chromosome[j].rotationChange,
+          ),
+          thrust: mergeGeneAttribute(
+            parent1.chromosome[j].thrust,
+            parent2.chromosome[j].thrust,
+          ),
+        };
+        newChromosome.push(newInput);
+      }
+
+      population.push(newChromosome);
+    }
+
+    return population;
+  };
+
+  let population = generateRandomPopulation();
+  let populationResult = runPopulation(population);
+  renderPopulationResult(populationResult);
+
+  // setInterval(() => {
+  //   population = optimizePopulation(populationResult);
+  //   populationResult = runPopulation(population);
+
+  //   renderPopulationResult(populationResult);
+  // }, 500);
 };
 marsLanderSimulator();

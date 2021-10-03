@@ -25,10 +25,10 @@ const marsLanderSimulator = () => {
 
   type ChromosomeScore = {
     ponderedAverage: number;
-    distancePoints: number;
-    velocityPoints: number;
-    fuelPoints: number;
-    rotationPoints: number;
+    distanceScore: number;
+    velocityScore: number;
+    fuelScore: number;
+    rotationScore: number;
   };
 
   type ChromosomeResult = {
@@ -47,13 +47,13 @@ const marsLanderSimulator = () => {
   };
 
   const GENETIC_CONFIG = {
-    POPULATION_SIZE: 200,
+    POPULATION_SIZE: 50,
     CHROMOSOME_SIZE: 100,
-    SURVIVAL_PERCENTAGE: 0.2,
-    PROBABILITY_OF_MUTATION: 0.01,
-    MAX_ITERATIONS: 100,
+    SURVIVAL_PERCENTAGE: 0.1,
+    PROBABILITY_OF_MUTATION: 0.02,
+    MAX_ITERATIONS: 1000000000,
     ANIMATE: true,
-    ANIMATION_VELOCITY: 5,
+    ANIMATION_VELOCITY: 100,
   };
 
   const FLOOR_POINTS: Coordinate[] = [
@@ -216,10 +216,10 @@ const marsLanderSimulator = () => {
       (point, index) => point.y === floor[index + 1].y,
     );
 
-    const point1 = floor[firstTargetIndex];
-    const point2 = floor[firstTargetIndex + 1];
+    const left = floor[firstTargetIndex];
+    const right = floor[firstTargetIndex + 1];
 
-    return { x: (point1.x + point2.x) / 2, y: point1.y };
+    return { center: { x: (left.x + right.x) / 2, y: left.y }, left, right };
   };
 
   const floorTarget = findFloorTarget(FLOOR_POINTS);
@@ -238,37 +238,46 @@ const marsLanderSimulator = () => {
     // Each point should be a number between 0 and 1
     // Then we will multiply them by an arbitrary preponderance number
     // 1 is good, 0 is bad
-    const distancePoints =
-      1 / (distance(lastState.position, floorTarget) / 7000 + 1);
+    let distanceScore =
+      1 / (distance(lastState.position, floorTarget.center) / 7000 + 1);
+    if (
+      lastState.position.x > floorTarget.left.x + 10 &&
+      lastState.position.x < floorTarget.right.x - 10 &&
+      Math.abs(lastState.position.y - floorTarget.center.y) < 40
+    ) {
+      distanceScore = 1;
+    }
 
-    const velocityPoints =
-      (1 / (Math.abs(lastState.velocity.vertical) / 50 + 1) +
-        1 / (Math.abs(lastState.velocity.horizontal) / 50 + 1)) /
-      2;
+    let velocityScore =
+      -Math.abs(lastState.velocity.vertical) / 25 -
+      Math.abs(lastState.velocity.horizontal) / 25;
+    if (
+      Math.abs(lastState.velocity.vertical) < 35 &&
+      Math.abs(lastState.velocity.horizontal) < 15
+    ) {
+      velocityScore = 1;
+    }
 
-    const fuelPoints = 1 - 1 / usedFuel;
+    // const fuelScore = 1 - 1 / usedFuel;
+    const fuelScore = 1;
 
-    const rotationPoints =
-      1 /
-      (Math.abs(lastState.rotation) +
-        Math.abs(lastState2.rotation) +
-        Math.abs(lastState3.rotation) +
-        1);
+    const rotationScore =
+      1 / (Math.abs(lastState.rotation) + Math.abs(lastState2.rotation) + 1);
 
-    const DISTANCE_PREPONDERANCE = 2;
+    const DISTANCE_PREPONDERANCE = 100;
     const VELOCITY_PREPONDERANCE = 1;
     const FUEL_PREPONDERANCE = 1;
     const ROTATION_PREPONDERANCE = 1;
     return {
       ponderedAverage:
-        DISTANCE_PREPONDERANCE * distancePoints +
-        VELOCITY_PREPONDERANCE * velocityPoints +
-        FUEL_PREPONDERANCE * fuelPoints +
-        ROTATION_PREPONDERANCE * rotationPoints,
-      distancePoints,
-      velocityPoints,
-      fuelPoints,
-      rotationPoints,
+        DISTANCE_PREPONDERANCE * distanceScore +
+        VELOCITY_PREPONDERANCE * velocityScore +
+        FUEL_PREPONDERANCE * fuelScore +
+        ROTATION_PREPONDERANCE * rotationScore,
+      distanceScore,
+      velocityScore,
+      fuelScore,
+      rotationScore,
     };
   };
 
@@ -444,6 +453,12 @@ const marsLanderSimulator = () => {
       );
       best = sortedResults[0];
 
+      if ((window as any).logBest) {
+        (window as any).logBest = false;
+        console.log(best);
+        console.log(best.score);
+        console.log(best.states[best.states.length - 1]);
+      }
       // console.log(best.score.ponderedAverage);
       if (best.score.ponderedAverage === 4) {
         console.log({ best });
@@ -453,6 +468,8 @@ const marsLanderSimulator = () => {
     renderPopulationResult(populationResult);
 
     console.log(best);
+    console.log(best.score);
+    console.log(best.states[best.states.length - 1]);
     console.log(JSON.stringify(best.chromosome, null, 2));
   };
   loopAndOptimize();

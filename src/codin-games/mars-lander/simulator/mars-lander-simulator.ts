@@ -49,11 +49,11 @@ const marsLanderSimulator = () => {
   const GENETIC_CONFIG = {
     POPULATION_SIZE: 200,
     CHROMOSOME_SIZE: 100,
-    SURVIVAL_PERCENTAGE: 0.1,
+    SURVIVAL_PERCENTAGE: 0.2,
     PROBABILITY_OF_MUTATION: 0.01,
-    MAX_ITERATIONS: 1000,
+    MAX_ITERATIONS: 100,
     ANIMATE: true,
-    ANIMATION_VELOCITY: 10,
+    ANIMATION_VELOCITY: 5,
   };
 
   const FLOOR_POINTS: Coordinate[] = [
@@ -237,31 +237,33 @@ const marsLanderSimulator = () => {
 
     // Each point should be a number between 0 and 1
     // Then we will multiply them by an arbitrary preponderance number
-    // 1 is bad, 0 is good
-    const distancePoints = distance(lastState.position, floorTarget) / 7000;
+    // 1 is good, 0 is bad
+    const distancePoints =
+      1 / (distance(lastState.position, floorTarget) / 7000 + 1);
 
     const velocityPoints =
-      1 -
-      1 / Math.abs(lastState.velocity.vertical) -
-      1 / Math.abs(lastState.velocity.vertical);
+      (1 / (Math.abs(lastState.velocity.vertical) / 50 + 1) +
+        1 / (Math.abs(lastState.velocity.horizontal) / 50 + 1)) /
+      2;
 
-    const fuelPoints = usedFuel / 2000;
+    const fuelPoints = 1 - 1 / usedFuel;
 
     const rotationPoints =
+      1 /
       (Math.abs(lastState.rotation) +
         Math.abs(lastState2.rotation) +
-        Math.abs(lastState3.rotation)) /
-      (90 * 3);
+        Math.abs(lastState3.rotation) +
+        1);
 
-    const DISTANCE_PREPONDERANCE = 1;
+    const DISTANCE_PREPONDERANCE = 2;
     const VELOCITY_PREPONDERANCE = 1;
     const FUEL_PREPONDERANCE = 1;
     const ROTATION_PREPONDERANCE = 1;
     return {
       ponderedAverage:
-        -DISTANCE_PREPONDERANCE * distancePoints -
-        VELOCITY_PREPONDERANCE * velocityPoints -
-        FUEL_PREPONDERANCE * fuelPoints -
+        DISTANCE_PREPONDERANCE * distancePoints +
+        VELOCITY_PREPONDERANCE * velocityPoints +
+        FUEL_PREPONDERANCE * fuelPoints +
         ROTATION_PREPONDERANCE * rotationPoints,
       distancePoints,
       velocityPoints,
@@ -282,13 +284,16 @@ const marsLanderSimulator = () => {
     };
     const states: GameState[] = [currentState];
     const gameRunPositions: Coordinate[] = [];
-    while (!result || !result.collided) {
+    while (
+      (!result || !result.collided) &&
+      turn < GENETIC_CONFIG.CHROMOSOME_SIZE
+    ) {
       result = gameTurn(gameInputs[turn], currentState);
       usedFuel += result.newState.thrust;
       currentState = result.newState;
       states.push(currentState);
       gameRunPositions.push({ ...currentState.position });
-      if (result.collided) {
+      if (result.collided || turn === GENETIC_CONFIG.CHROMOSOME_SIZE - 1) {
         const gameRun: ChromosomeResult = {
           positions: gameRunPositions,
           usedFuel,
@@ -297,9 +302,8 @@ const marsLanderSimulator = () => {
           states,
         };
         return gameRun;
-      } else {
-        turn++;
       }
+      turn++;
     }
   };
 
@@ -424,19 +428,29 @@ const marsLanderSimulator = () => {
 
   const loopAndOptimize = async () => {
     let best: ChromosomeResult;
-    for (let i = 0; i < GENETIC_CONFIG.MAX_ITERATIONS; i++) {
+    for (let i = 0; i < GENETIC_CONFIG.MAX_ITERATIONS - 1; i++) {
       if (GENETIC_CONFIG.ANIMATE) {
         await delay(400 / GENETIC_CONFIG.ANIMATION_VELOCITY);
       }
       population = optimizePopulation(populationResult);
       populationResult = runPopulation(population);
 
-      renderPopulationResult(populationResult);
+      if (GENETIC_CONFIG.ANIMATE) {
+        renderPopulationResult(populationResult);
+      }
 
-      best = populationResult.results.sort(
+      const sortedResults = populationResult.results.sort(
         (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
-      )[0];
+      );
+      best = sortedResults[0];
+
+      // console.log(best.score.ponderedAverage);
+      if (best.score.ponderedAverage === 4) {
+        console.log({ best });
+      }
     }
+
+    renderPopulationResult(populationResult);
 
     console.log(best);
     console.log(JSON.stringify(best.chromosome, null, 2));

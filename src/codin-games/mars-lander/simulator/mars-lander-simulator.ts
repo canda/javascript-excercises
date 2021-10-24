@@ -49,11 +49,15 @@ const marsLanderSimulator = () => {
   const GENETIC_CONFIG = {
     POPULATION_SIZE: 50,
     CHROMOSOME_SIZE: 100,
-    SURVIVAL_PERCENTAGE: 0.1,
-    PROBABILITY_OF_MUTATION: 0.02,
-    MAX_ITERATIONS: 1000000000,
+    SURVIVAL_PERCENTAGE: 0.3,
+    PROBABILITY_OF_MUTATION: 0.01,
+    MAX_ITERATIONS: 100,
     ANIMATE: true,
-    ANIMATION_VELOCITY: 100,
+    ANIMATION_VELOCITY: 10,
+    DISTANCE_PREPONDERANCE: 100,
+    VELOCITY_PREPONDERANCE: 1,
+    FUEL_PREPONDERANCE: 1,
+    ROTATION_PREPONDERANCE: 1,
   };
 
   const FLOOR_POINTS: Coordinate[] = [
@@ -241,8 +245,8 @@ const marsLanderSimulator = () => {
     let distanceScore =
       1 / (distance(lastState.position, floorTarget.center) / 7000 + 1);
     if (
-      lastState.position.x > floorTarget.left.x + 10 &&
-      lastState.position.x < floorTarget.right.x - 10 &&
+      lastState.position.x > floorTarget.left.x + 400 &&
+      lastState.position.x < floorTarget.right.x - 400 &&
       Math.abs(lastState.position.y - floorTarget.center.y) < 40
     ) {
       distanceScore = 1;
@@ -264,16 +268,12 @@ const marsLanderSimulator = () => {
     const rotationScore =
       1 / (Math.abs(lastState.rotation) + Math.abs(lastState2.rotation) + 1);
 
-    const DISTANCE_PREPONDERANCE = 100;
-    const VELOCITY_PREPONDERANCE = 1;
-    const FUEL_PREPONDERANCE = 1;
-    const ROTATION_PREPONDERANCE = 1;
     return {
       ponderedAverage:
-        DISTANCE_PREPONDERANCE * distanceScore +
-        VELOCITY_PREPONDERANCE * velocityScore +
-        FUEL_PREPONDERANCE * fuelScore +
-        ROTATION_PREPONDERANCE * rotationScore,
+        GENETIC_CONFIG.DISTANCE_PREPONDERANCE * distanceScore +
+        GENETIC_CONFIG.VELOCITY_PREPONDERANCE * velocityScore +
+        GENETIC_CONFIG.FUEL_PREPONDERANCE * fuelScore +
+        GENETIC_CONFIG.ROTATION_PREPONDERANCE * rotationScore,
       distanceScore,
       velocityScore,
       fuelScore,

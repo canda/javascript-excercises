@@ -39,7 +39,7 @@ const multiplyTables: Record<string, Record<string, string>> = {
     '0': '0',
     '1': '3',
     '2': '6',
-    '3': '6',
+    '3': '9',
     '4': '12',
     '5': '15',
     '6': '18',
@@ -244,57 +244,88 @@ const sumTables: Record<string, Record<string, string>> = {
   },
 };
 
-const sumCharacters = (char1: string, char2: string) => {
-  console.log({ char1, char2 });
-  const total = sumTables[char1][char2];
+export const sumDigits = (digit1: string, digit2: string) => {
+  const total = sumTables[digit1][digit2];
+  const result = total[total.length - 1];
+  const rest = total.length === 1 ? '0' : total[0];
   return {
-    result: total[total.length - 1],
-    rest: total.length === 1 ? '0' : total[0],
+    result,
+    rest,
   };
 };
 
-const addRest = (charToAdd: string, position: number, restsArray: string[]) => {
-  let rest = charToAdd;
-  let i = position;
-  while (rest !== '0') {
-    const currenPositiontRest = restsArray[i] || '0';
-    restsArray[position] = sumCharacters(currenPositiontRest, rest).result;
-
-    rest = sumCharacters(currenPositiontRest, rest).rest;
-    i++;
+export const addDigitToNumberPosition = (
+  digit: string,
+  position: number,
+  number: string[],
+) => {
+  const result = [];
+  for (let i = position + 1; i < number.length; i++) {
+    result.push(number[i]);
   }
+  let rest = digit;
+  let currentPosition = position;
+  while (rest !== '0' || result.length < number.length) {
+    const { result: nextDigit, rest: sumRest } = sumDigits(
+      rest,
+      number[currentPosition] || '0',
+    );
+    result.unshift(nextDigit);
+    rest = sumRest;
+    currentPosition--;
+  }
+
+  return result;
 };
 
-function multiply(num1: string, num2: string): string {
-  const maxLength = Math.max(num1.length, num2.length);
-  let resultArray: string[] = [];
-  const restsArray: string[] = [];
-  for (let i = 0; i < maxLength; i++) {
-    const positionMultiplyResult = multiplyTables[num1[i]][num2[i]];
-    positionMultiplyResult;
-    const multiplyRest =
-      positionMultiplyResult.length === 1 ? '0' : positionMultiplyResult[0];
-    const multiplyLastDigit =
-      positionMultiplyResult[positionMultiplyResult.length - 1];
+const zeroPad = (number: string[], length: number) => {
+  while (number.length < length) {
+    number.unshift('0');
+  }
+  return number;
+};
 
-    addRest(multiplyRest, i + 1, restsArray);
+export const sumNumbers = (number1: string[], number2: string[]) => {
+  const maxLength = Math.max(number1.length, number2.length);
+  const zeroPadded1 = zeroPad(number1, maxLength);
+  const zeroPadded2 = zeroPad(number2, maxLength);
+  let result = zeroPadded2;
+  for (let i = 0; i < zeroPadded1.length; i++) {
+    const digit = zeroPadded1[i];
+    const resultPosition = i + result.length - maxLength;
+    result = addDigitToNumberPosition(digit, resultPosition, result);
+  }
+  return result;
+};
 
-    const currentDigitResult = sumCharacters(
-      restsArray[i] || '0',
-      multiplyLastDigit,
-    ).result;
-    addRest(
-      sumCharacters(restsArray[i] || '0', multiplyLastDigit).rest,
-      i + 1,
-      restsArray,
-    );
+const addZeroToRight = (number: string[], zeroesAmount: number) => {
+  for (let i = 0; i < zeroesAmount; i++) {
+    number.push('0');
+  }
+  return number;
+};
 
-    resultArray[i] = currentDigitResult;
+function multiply(input1: string, input2: string): string {
+  const number1 = input1.split('');
+  const number2 = input2.split('');
+  let resultArray: string[] = ['0'];
+  for (let i = 0; i < number1.length; i++) {
+    for (let j = 0; j < number2.length; j++) {
+      const digit1 = number1[i];
+      const digit2 = number2[j];
+      let multiplyResult = multiplyTables[digit1][digit2].split('');
+      multiplyResult = addZeroToRight(multiplyResult, number1.length - 1 - i);
+      multiplyResult = addZeroToRight(multiplyResult, number2.length - 1 - j);
+
+      resultArray = sumNumbers(resultArray, multiplyResult);
+    }
   }
 
-  resultArray = resultArray.concat(restsArray.slice(resultArray.length));
+  // remove left zeroes
+  while (resultArray[0] === '0' && resultArray.length > 1) {
+    resultArray = resultArray.slice(1);
+  }
 
-  return resultArray.reverse().join('');
-  // return (parseInt(num1) * parseInt(num2)).toString();
+  return resultArray.join('');
 }
 export default multiply;

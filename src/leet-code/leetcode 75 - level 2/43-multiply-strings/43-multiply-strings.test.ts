@@ -142,6 +142,8 @@ describe('multiply', () => {
   });
 
   it('should multiply really long numbers', () => {
+    const t0 = Date.now();
+
     expect(
       multiply(
         '14992561453667515041174576364495007455793',
@@ -149,6 +151,10 @@ describe('multiply', () => {
       ),
     ).toEqual(
       '1077250914885550443524655360967382374708267263352100135988164631681568517376365509495071174',
+    );
+    const t1 = Date.now();
+    console.log(
+      `Call really long multiplication took ${t1 - t0} milliseconds.`,
     );
   });
 

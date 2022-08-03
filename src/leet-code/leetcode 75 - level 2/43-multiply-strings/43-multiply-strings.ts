@@ -310,15 +310,19 @@ function multiply(input1: string, input2: string): string {
   const number2 = input2.split('');
   let resultArray: string[] = ['0'];
   for (let i = 0; i < number1.length; i++) {
+    let subResultArray: string[] = ['0'];
     for (let j = 0; j < number2.length; j++) {
       const digit1 = number1[i];
       const digit2 = number2[j];
       let multiplyResult = multiplyTables[digit1][digit2].split('');
+
+      // should start optimizing here
+      // we know that it has zeroes to the right, so we don't need to sum the zeroes
       multiplyResult = addZeroToRight(multiplyResult, number1.length - 1 - i);
       multiplyResult = addZeroToRight(multiplyResult, number2.length - 1 - j);
-
-      resultArray = sumNumbers(resultArray, multiplyResult);
+      subResultArray = sumNumbers(subResultArray, multiplyResult);
     }
+    resultArray = sumNumbers(subResultArray, resultArray);
   }
 
   // remove left zeroes
@@ -328,4 +332,5 @@ function multiply(input1: string, input2: string): string {
 
   return resultArray.join('');
 }
+
 export default multiply;

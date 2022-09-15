@@ -278,24 +278,51 @@ export const addDigitToNumberPosition = (
   return result;
 };
 
-const zeroPad = (number: string[], length: number) => {
+const addZeroToLeft = (number: string[], length: number) => {
   while (number.length < length) {
     number.unshift('0');
   }
   return number;
 };
 
-export const sumNumbers = (number1: string[], number2: string[]) => {
-  const maxLength = Math.max(number1.length, number2.length);
-  const zeroPadded1 = zeroPad(number1, maxLength);
-  const zeroPadded2 = zeroPad(number2, maxLength);
+export const sumNumbers = (
+  number1: { value: string[]; zeroesToTheRight?: number },
+  number2: { value: string[]; zeroesToTheRight?: number },
+) => {
+  number1.zeroesToTheRight = number1.zeroesToTheRight || 0;
+  number2.zeroesToTheRight = number2.zeroesToTheRight || 0;
+  const maxLength = Math.max(
+    number1.value.length + number1.zeroesToTheRight,
+    number2.value.length + number2.zeroesToTheRight,
+  );
+  let rightZeroPaddedNumber1: string[];
+  let rightZeroPaddedNumber2: string[];
+  if (number1.zeroesToTheRight > number2.zeroesToTheRight) {
+    rightZeroPaddedNumber1 = addZeroToRight(
+      number1.value,
+      number1.zeroesToTheRight - number2.zeroesToTheRight,
+    );
+    rightZeroPaddedNumber2 = number2.value;
+  } else {
+    rightZeroPaddedNumber2 = addZeroToRight(
+      number2.value,
+      number2.zeroesToTheRight - number1.zeroesToTheRight,
+    );
+    rightZeroPaddedNumber1 = number1.value;
+  }
+  const pendingZeroesToRight = Math.min(
+    number1.zeroesToTheRight,
+    number2.zeroesToTheRight,
+  );
+  const zeroPadded1 = addZeroToLeft(rightZeroPaddedNumber1, maxLength);
+  const zeroPadded2 = addZeroToLeft(rightZeroPaddedNumber2, maxLength);
   let result = zeroPadded2;
   for (let i = 0; i < zeroPadded1.length; i++) {
     const digit = zeroPadded1[i];
-    const resultPosition = i + result.length - maxLength;
+    const resultPosition = i + result.length - maxLength + pendingZeroesToRight;
     result = addDigitToNumberPosition(digit, resultPosition, result);
   }
-  return result;
+  return addZeroToRight(result, 2 * pendingZeroesToRight);
 };
 
 const addZeroToRight = (number: string[], zeroesAmount: number) => {
@@ -318,11 +345,17 @@ function multiply(input1: string, input2: string): string {
 
       // should start optimizing here
       // we know that it has zeroes to the right, so we don't need to sum the zeroes
-      multiplyResult = addZeroToRight(multiplyResult, number1.length - 1 - i);
-      multiplyResult = addZeroToRight(multiplyResult, number2.length - 1 - j);
-      subResultArray = sumNumbers(subResultArray, multiplyResult);
+      // multiplyResult = addZeroToRight(multiplyResult, number1.length - 1 - i);
+      // multiplyResult = addZeroToRight(multiplyResult, number2.length - 1 - j);
+      subResultArray = sumNumbers(
+        { value: subResultArray },
+        {
+          value: multiplyResult,
+          zeroesToTheRight: number1.length - 1 - i + (number2.length - 1 - j),
+        },
+      );
     }
-    resultArray = sumNumbers(subResultArray, resultArray);
+    resultArray = sumNumbers({ value: subResultArray }, { value: resultArray });
   }
 
   // remove left zeroes

@@ -56,35 +56,105 @@ describe('addDigitToNumberPosition', () => {
 
 describe('sumNumbers', () => {
   it('should add 1 + 2', () => {
-    expect(sumNumbers(['1'], ['2'])).toEqual(['3']);
+    expect(
+      sumNumbers(
+        { value: ['1'], zeroesToTheRight: 0 },
+        { value: ['2'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['3']);
   });
 
   it('should add 9 + 9', () => {
-    expect(sumNumbers(['9'], ['9'])).toEqual(['1', '8']);
+    expect(
+      sumNumbers(
+        { value: ['9'], zeroesToTheRight: 0 },
+        { value: ['9'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '8']);
   });
 
-  it('should add 100 + 100', () => {
-    expect(sumNumbers(['1', '0', '0'], ['1', '0', '0'])).toEqual([
-      '2',
-      '0',
-      '0',
-    ]);
+  it('should add 1 + 100', () => {
+    expect(
+      sumNumbers(
+        { value: ['1'], zeroesToTheRight: 0 },
+        { value: ['1'], zeroesToTheRight: 2 },
+      ),
+    ).toEqual(['1', '0', '1']);
+    expect(
+      sumNumbers(
+        { value: ['1'], zeroesToTheRight: 0 },
+        { value: ['1', '0', '0'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '0', '1']);
+  });
+
+  it('should add 100 + 1', () => {
+    expect(
+      sumNumbers(
+        { value: ['1'], zeroesToTheRight: 2 },
+        { value: ['1'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '0', '1']);
+    expect(
+      sumNumbers(
+        { value: ['1', '0', '0'], zeroesToTheRight: 0 },
+        { value: ['1'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '0', '1']);
   });
 
   it('should add 9 + 10', () => {
-    expect(sumNumbers(['9'], ['1', '0'])).toEqual(['1', '9']);
+    expect(
+      sumNumbers(
+        { value: ['9'], zeroesToTheRight: 0 },
+        { value: ['1', '0'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '9']);
+    expect(
+      sumNumbers(
+        { value: ['9'], zeroesToTheRight: 0 },
+        { value: ['1'], zeroesToTheRight: 1 },
+      ),
+    ).toEqual(['1', '9']);
   });
 
   it('should add 10 + 9', () => {
-    expect(sumNumbers(['1', '0'], ['9'])).toEqual(['1', '9']);
+    expect(
+      sumNumbers(
+        { value: ['1', '0'], zeroesToTheRight: 0 },
+        { value: ['9'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '9']);
+    expect(
+      sumNumbers(
+        { value: ['1'], zeroesToTheRight: 1 },
+        { value: ['9'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '9']);
   });
 
   it('should add 99 + 10', () => {
-    expect(sumNumbers(['9', '9'], ['1', '0'])).toEqual(['1', '0', '9']);
+    expect(
+      sumNumbers(
+        { value: ['1', '0'], zeroesToTheRight: 0 },
+        { value: ['9', '9'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '0', '9']);
+    expect(
+      sumNumbers(
+        { value: ['1'], zeroesToTheRight: 1 },
+        { value: ['9', '9'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '0', '9']);
   });
 
   it('should add 99 + 99', () => {
-    expect(sumNumbers(['9', '9'], ['9', '9'])).toEqual(['1', '9', '8']);
+    expect(
+      sumNumbers(
+        { value: ['9', '9'], zeroesToTheRight: 0 },
+        { value: ['9', '9'], zeroesToTheRight: 0 },
+      ),
+    ).toEqual(['1', '9', '8']);
   });
 });
 

@@ -1,8 +1,9 @@
+import reverseList from '../206-reverse-linked-list/206-reverse-linked-list';
+
 // Definition for singly-linked list.
 class ListNode {
   val: number;
   next: ListNode | null;
-  previous?: ListNode | null;
   constructor(val?: number, next?: ListNode | null) {
     this.val = val === undefined ? 0 : val;
     this.next = next === undefined ? null : next;
@@ -11,13 +12,13 @@ class ListNode {
 
 function isPalindrome(head: ListNode | null): boolean {
   if (!head) return false;
+  if (!head.next) return true;
   let isOddLength = true;
   let middleToLeft = head;
-  let middleToRight = head;
-  let currentNode = head;
+  let middleToRight = head.next;
+  let currentNode = head.next;
 
   while (!!currentNode.next) {
-    currentNode.next.previous = currentNode;
     currentNode = currentNode.next;
     isOddLength = !isOddLength;
     if (isOddLength) {
@@ -27,16 +28,31 @@ function isPalindrome(head: ListNode | null): boolean {
     }
   }
 
+  const originalMiddleToLeft = middleToLeft;
+  const originalMiddleToLeftNext = middleToLeft.next;
+  middleToLeft.next = null;
+
+  // reverse first half of the list
+  reverseList(head);
+
+  const restoreOriginalList = () => {
+    reverseList(originalMiddleToLeft);
+    originalMiddleToLeft.next = originalMiddleToLeftNext;
+  };
+
   if (middleToRight.val != middleToLeft.val) {
+    restoreOriginalList();
     return false;
   }
   while (!!middleToRight.next) {
-    middleToLeft = middleToLeft.previous;
+    middleToLeft = middleToLeft.next;
     middleToRight = middleToRight.next;
     if (middleToRight.val != middleToLeft.val) {
+      restoreOriginalList();
       return false;
     }
   }
+  restoreOriginalList();
   return true;
 }
 

@@ -57,7 +57,7 @@ const marsLanderSimulator = () => {
     DISTANCE_PREPONDERANCE: 50,
     VELOCITY_PREPONDERANCE: 1,
     FUEL_PREPONDERANCE: 1,
-    ROTATION_PREPONDERANCE: 1,
+    ROTATION_PREPONDERANCE: 20,
   };
 
   const FLOOR_POINTS: Coordinate[] = [

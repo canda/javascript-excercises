@@ -470,7 +470,7 @@ const marsLanderSimulator = () => {
     console.log(best);
     console.log(best.score);
     console.log(best.states[best.states.length - 1]);
-    console.log(JSON.stringify(best.chromosome, null, 2));
+    console.log(JSON.stringify(best.chromosome));
   };
   loopAndOptimize();
 };

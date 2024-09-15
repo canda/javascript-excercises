@@ -243,7 +243,7 @@ const marsLanderSimulator = () => {
     // Then we will multiply them by an arbitrary preponderance number
     // 1 is good, 0 is bad
     let distanceScore =
-      1 / (distance(lastState.position, floorTarget.center) / 7000 + 1);
+      1 / (distance(lastState.position, floorTarget.center) / 5000 + 1);
     if (
       lastState.position.x > floorTarget.left.x + 400 &&
       lastState.position.x < floorTarget.right.x - 400 &&

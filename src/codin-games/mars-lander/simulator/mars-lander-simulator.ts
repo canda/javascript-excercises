@@ -467,7 +467,6 @@ const marsLanderSimulator = () => {
         (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
       );
       best = sortedResults[0];
-      console.log({ GENETIC_CONFIG });
       console.log(best.score);
 
       if ((window as any).logBest) {

@@ -255,20 +255,15 @@ const marsLanderSimulator = () => {
       distanceScore = 1;
     }
 
-    let velocityScore =
-      -Math.abs(lastState.velocity.vertical) / 25 -
-      Math.abs(lastState.velocity.horizontal) / 25;
-    if (
-      Math.abs(lastState.velocity.vertical) < 35 &&
-      Math.abs(lastState.velocity.horizontal) < 15
-    ) {
-      velocityScore = 1;
-    }
-
     const horizontalVelocityScore =
       Math.abs(lastState.velocity.horizontal) < 15
         ? 1
         : 1 - Math.abs(lastState.velocity.horizontal) / 25;
+
+    const verticalVelocityScore =
+      Math.abs(lastState.velocity.vertical) < 15
+        ? 1
+        : 1 - Math.abs(lastState.velocity.vertical) / 25;
 
     // const fuelScore = 1 - 1 / usedFuel;
     const fuelScore = 1;

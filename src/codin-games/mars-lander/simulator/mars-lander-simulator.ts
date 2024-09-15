@@ -56,7 +56,8 @@ const marsLanderSimulator = () => {
     ANIMATE: true,
     ANIMATION_VELOCITY: 10,
     DISTANCE_PREPONDERANCE: 100,
-    VELOCITY_PREPONDERANCE: 10,
+    VERTICAL_VELOCITY_PREPONDERANCE: 10,
+    HORIZONTAL_VELOCITY_PREPONDERANCE: 10,
     FUEL_PREPONDERANCE: 1,
     ROTATION_PREPONDERANCE: 20,
   };
@@ -284,7 +285,8 @@ const marsLanderSimulator = () => {
         GENETIC_CONFIG.FUEL_PREPONDERANCE * fuelScore +
         GENETIC_CONFIG.ROTATION_PREPONDERANCE * rotationScore,
       distanceScore,
-      velocityScore,
+      verticalVelocityScore,
+      horizontalVelocityScore,
       fuelScore,
       rotationScore,
     };

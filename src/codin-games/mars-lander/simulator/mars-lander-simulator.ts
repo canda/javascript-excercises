@@ -26,8 +26,8 @@ const marsLanderSimulator = () => {
   type ChromosomeScore = {
     ponderedAverage: number;
     distanceScore: number;
-    horizontalVelocityScore: number;
-    verticalVelocityScore: number;
+    xVelocityScore: number;
+    yVelocityScore: number;
     fuelScore: number;
     rotationScore: number;
   };
@@ -256,12 +256,12 @@ const marsLanderSimulator = () => {
       distanceScore = 1;
     }
 
-    const horizontalVelocityScore =
+    const xVelocityScore =
       Math.abs(lastState.velocity.horizontal) < 15
         ? 1
         : 1 - Math.abs(lastState.velocity.horizontal) / 25;
 
-    const verticalVelocityScore =
+    const yVelocityScore =
       Math.abs(lastState.velocity.vertical) < 15
         ? 1
         : 1 - Math.abs(lastState.velocity.vertical) / 25;
@@ -281,14 +281,13 @@ const marsLanderSimulator = () => {
     return {
       ponderedAverage:
         GENETIC_CONFIG.DISTANCE_PREPONDERANCE * distanceScore +
-        GENETIC_CONFIG.VERTICAL_VELOCITY_PREPONDERANCE * verticalVelocityScore +
-        GENETIC_CONFIG.HORIZONTAL_VELOCITY_PREPONDERANCE *
-          horizontalVelocityScore +
+        GENETIC_CONFIG.VERTICAL_VELOCITY_PREPONDERANCE * yVelocityScore +
+        GENETIC_CONFIG.HORIZONTAL_VELOCITY_PREPONDERANCE * xVelocityScore +
         GENETIC_CONFIG.FUEL_PREPONDERANCE * fuelScore +
         GENETIC_CONFIG.ROTATION_PREPONDERANCE * rotationScore,
       distanceScore,
-      verticalVelocityScore,
-      horizontalVelocityScore,
+      yVelocityScore,
+      xVelocityScore,
       fuelScore,
       rotationScore,
     };

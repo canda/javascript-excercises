@@ -479,7 +479,7 @@ const marsLanderSimulator = () => {
         (x, y) => y.score.ponderedAverage - x.score.ponderedAverage,
       );
       best = sortedResults[0];
-      console.log(best.score);
+      console.log(JSON.stringify(best.score));
 
       if ((window as any).logBest) {
         (window as any).logBest = false;

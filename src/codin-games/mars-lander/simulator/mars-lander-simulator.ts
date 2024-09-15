@@ -348,6 +348,10 @@ const marsLanderSimulator = () => {
     succesfullRuns.forEach((run) => {
       renderResult(run).setAttribute('stroke', 'green');
     });
+    const bestRun = sortedRuns[0];
+    renderResult(bestRun)
+      .setAttribute('stroke', 'blue')
+      .setAttribute('stroke-width', '40');
   };
 
   const generateRandomPopulation = (): Population => {

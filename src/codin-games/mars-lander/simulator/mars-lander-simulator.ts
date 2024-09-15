@@ -238,6 +238,8 @@ const marsLanderSimulator = () => {
     const lastState = states[states.length - 1];
     const lastState2 = states[states.length - 2];
     const lastState3 = states[states.length - 3];
+    const lastState4 = states[states.length - 4];
+    const lastState5 = states[states.length - 5];
 
     // Each point should be a number between 0 and 1
     // Then we will multiply them by an arbitrary preponderance number
@@ -266,7 +268,13 @@ const marsLanderSimulator = () => {
     const fuelScore = 1;
 
     const rotationScore =
-      1 / (Math.abs(lastState.rotation) + Math.abs(lastState2.rotation) + 1);
+      1 /
+      (Math.abs(lastState.rotation) +
+        Math.abs(lastState2.rotation) +
+        Math.abs(lastState3.rotation) +
+        Math.abs(lastState4.rotation) +
+        Math.abs(lastState5.rotation) +
+        1);
 
     return {
       ponderedAverage:

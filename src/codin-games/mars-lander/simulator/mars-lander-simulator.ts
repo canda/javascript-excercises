@@ -456,6 +456,7 @@ const marsLanderSimulator = () => {
         await delay(400 / GENETIC_CONFIG.ANIMATION_VELOCITY);
       }
       population = optimizePopulation(populationResult);
+      savePopulationToLocalStorage(population);
       populationResult = runPopulation(population);
 
       if (GENETIC_CONFIG.ANIMATE) {

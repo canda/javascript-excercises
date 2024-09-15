@@ -430,7 +430,17 @@ const marsLanderSimulator = () => {
     return population;
   };
 
-  let population = generateRandomPopulation();
+  const savePopulationToLocalStorage = (population: Population) => {
+    localStorage.setItem('mars-lander-population', JSON.stringify(population));
+  };
+
+  const getPopulationFromLocalStorage = (): Population => {
+    const populationString = localStorage.getItem('mars-lander-population');
+    return populationString ? JSON.parse(populationString) : null;
+  };
+
+  let population =
+    getPopulationFromLocalStorage() ?? generateRandomPopulation();
   let populationResult = runPopulation(population);
   renderPopulationResult(populationResult);
 

@@ -48,7 +48,7 @@ const marsLanderSimulator = () => {
   };
 
   const GENETIC_CONFIG = {
-    POPULATION_SIZE: 100,
+    POPULATION_SIZE: 200,
     CHROMOSOME_SIZE: 100,
     SURVIVAL_PERCENTAGE: 0.15,
     PROBABILITY_OF_MUTATION: 0.02,

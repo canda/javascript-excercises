@@ -26,7 +26,8 @@ const marsLanderSimulator = () => {
   type ChromosomeScore = {
     ponderedAverage: number;
     distanceScore: number;
-    velocityScore: number;
+    horizontalVelocityScore: number;
+    verticalVelocityScore: number;
     fuelScore: number;
     rotationScore: number;
   };

@@ -349,9 +349,9 @@ const marsLanderSimulator = () => {
       renderResult(run).setAttribute('stroke', 'green');
     });
     const bestRun = sortedRuns[0];
-    renderResult(bestRun)
-      .setAttribute('stroke', 'blue')
-      .setAttribute('stroke-width', '40');
+    const bestRunPolyline = renderResult(bestRun);
+    bestRunPolyline.setAttribute('stroke', 'blue');
+    bestRunPolyline.setAttribute('stroke-width', '60');
   };
 
   const generateRandomPopulation = (): Population => {

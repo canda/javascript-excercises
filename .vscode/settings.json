@@ -1,4 +1,4 @@
 {
   "git.postCommitCommand": "push",
-  "gitdoc.enabled": true
+  "gitdoc.enabled": false
 }

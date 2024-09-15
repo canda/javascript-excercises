@@ -281,7 +281,9 @@ const marsLanderSimulator = () => {
     return {
       ponderedAverage:
         GENETIC_CONFIG.DISTANCE_PREPONDERANCE * distanceScore +
-        GENETIC_CONFIG.VELOCITY_PREPONDERANCE * velocityScore +
+        GENETIC_CONFIG.VERTICAL_VELOCITY_PREPONDERANCE * verticalVelocityScore +
+        GENETIC_CONFIG.HORIZONTAL_VELOCITY_PREPONDERANCE *
+          horizontalVelocityScore +
         GENETIC_CONFIG.FUEL_PREPONDERANCE * fuelScore +
         GENETIC_CONFIG.ROTATION_PREPONDERANCE * rotationScore,
       distanceScore,

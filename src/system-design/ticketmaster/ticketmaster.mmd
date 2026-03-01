@@ -9,6 +9,11 @@
 %%   - Millions of simultaneous users trying to purchase tickets for popular events should not cause the system to crash.
 %%   - Tens of thousands of events
 
+%% Models
+%% Event: id, name, date, venue, available_tickets
+%% User: id, name, email
+%% Ticket: id, event_id, user_id, purchase_date, payment_method_id
+
 %% API
 %% /search?q={query} - GET -  Search for events
 %% /events/{event_id} - GET -  Get event details
@@ -27,4 +32,6 @@ flowchart LR
   S --> D
   U -->|Create payment method| St([Stripe])
   U -->|Purchase tickets - payment token| TP
+  TP -->|Process payment| St
+  TP -->|Save ticket| D
 

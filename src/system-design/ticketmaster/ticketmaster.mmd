@@ -14,8 +14,11 @@
 %% /events/{event_id} - GET -  Get event details
 %% /payment-method - POST -  create a payment method (POST request with payment token from stripe)
 %% /purchase - POST -  Purchase tickets (POST request with event_id, quantity, and payment method id)
+%% /tickets - GET -  View purchased tickets (GET request with user authentication)
 
 flowchart LR
-  U[User] -->|Search for events| S[Search Service]
-  S --> D@{ shape: disk, label: "Database" }
+  U[User]
+  U -->|Search/View events| S[Search Service]
+  S --> D@{ shape: database, label: "Database" }
+  S --> St([Stripe])
 

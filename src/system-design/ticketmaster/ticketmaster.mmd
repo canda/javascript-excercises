@@ -18,7 +18,13 @@
 
 flowchart LR
   U[User]
+  subgraph ticketmaster cloud
+    S[Search Service]
+    D@{ shape: database, label: "Database" }
+    TP[Ticketing Purchase Service]
+  end
   U -->|Search/View events| S[Search Service]
-  S --> D@{ shape: database, label: "Database" }
-  S --> St([Stripe])
+  S --> D
+  U -->|Create payment method| St([Stripe])
+  U -->|Purchase tickets - payment token| TP
 

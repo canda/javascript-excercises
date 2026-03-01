@@ -23,18 +23,22 @@
 
 flowchart LR
   U[User]
-  St@{ shape: "cloud", label: "Stripe" }
+  St@{ shape: circle, label: "Stripe" }
   subgraph ticketmaster cloud
     S[Search Service]
     D@{ shape: database, label: "Database" }
     TP[Ticketing Purchase Service]
-    R
+    R@{ shape: database, label: "Redis ⚡️" }
+    Q@{ shape: horizontal-cylinder, label: "Queueing Service (Kafka)" }
   end
   U -->|Search/View events| S[Search Service]
-  S --> D
+  S -->|Get event details| D
+  S -->|Get available seats| R
+  U -->|Get in queue to purchase| Q
+  Q -->|Get next batch of users| TP
+  TP -->|"Notify they are next in line (polling/ws)"| U
   U -->|Create payment method| St
   U -->|Purchase tickets - payment token| TP
   TP -->|Process payment| St
   TP -->|Save ticket| D
-  
-
+  TP -->|Update available seats| R

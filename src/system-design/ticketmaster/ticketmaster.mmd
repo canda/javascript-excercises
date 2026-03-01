@@ -7,6 +7,7 @@
 %% Non-functional requirements
 %%   - Many users should be able to search and purchase tickets simultaneously without performance degradation.
 %%   - Millions of simultaneous users trying to purchase tickets for popular events should not cause the system to crash.
+%%   - Tens of thousands of events
 
 %% API
 %% /search?q={query} - GET -  Search for events
@@ -16,4 +17,4 @@
 
 flowchart LR
   U[User] -->|Search for events| S[Search Service]
-    
+  S --> D@{ shape: cyl, label: "Database" }
